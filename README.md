@@ -179,7 +179,7 @@ The project uses TailwindCSS for styling with:
 
 1. Clone the repository
 2. Install dependencies: `npm install` or `yarn install`
-3. Start the development server: `npm start` or `yarn start`
+3. Start the development server: `npm run dev` or `yarn run dev`
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## 📊 Future Improvements
