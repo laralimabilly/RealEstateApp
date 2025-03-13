@@ -24,38 +24,46 @@ A modern React TypeScript application for browsing and managing real estate list
 ## 📁 Project Structure
 
 ```
+public/
+├── img/
+│   └── no-image.png
+├── listings.json
 src/
 ├── api/                  # API service layer
 │   └── listingsService.ts
 ├── components/           # Reusable UI components
 │   ├── common/           # Shared components (buttons, inputs, etc.)
+│   │   ├── ContactForm.tsx
+│   │   ├── FavoritesModal.tsx
 │   │   ├── FilterDropdown.tsx
 │   │   └── PriceRangeSlider.tsx
+│   └── layout/           # Layout-specific components
+│   │   ├── ErrorState.tsx
+│   │   └── LoadingState.tsx
+│   └── listingDetails/   # Listing Details-specific components
+│   │   ├── ListingDescription.tsx
+│   │   ├── ListingFeatures.tsx
+│   │   ├── ListingHeader.tsx
+│   │   └── FilterImage.tsx
 │   └── listings/         # Listing-specific components
-│       ├── ListingCard.tsx
-│       └── FilterSection.tsx
+│       ├── FilterSection.tsx
+│       ├── ListingGrid.tsx
+│       └── ListingCard.tsx
 ├── contexts/             # React Context API
 │   ├── ListingsContext.tsx
 │   └── ListingDetailsContext.tsx
 ├── pages/                # Page components
 │   ├── ListingsPage/
-│   │   └── index.tsx
+│   │   └── ListingsPage.tsx
 │   └── ListingDetailsPage/
-│       ├── index.tsx
-│       └── components/   # Page-specific components
-│           ├── ListingHeader.tsx
-│           ├── ListingImage.tsx
-│           ├── ListingFeatures.tsx
-│           ├── ListingDescription.tsx
-│           ├── ContactForm.tsx
-│           ├── LoadingState.tsx
-│           └── FavoritesModal.tsx
+│       └── ListingDetailsPage.tsx
 ├── types/                # TypeScript type definitions
 │   ├── listingTypes.ts
 │   └── listingDetailsTypes.ts
 ├── utils/                # Utility functions
 │   ├── Utils.ts
 │   └── favoritesUtils.ts
+├── AppProviders.tsx      # Context providers
 └── App.tsx               # Main app component
 ```
 
