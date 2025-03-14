@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import { formatPrice } from '../../utils/Utils';
 
+interface PriceRange {
+  min: number;
+  max: number;
+}
+
 interface PriceRangeSliderProps {
   label: string;
   minValue: number;
   maxValue: number;
-  value: { min: number; max: number };
-  onChange: (value: { min: number; max: number }) => void;
+  value: PriceRange;
+  onChange: (value: PriceRange) => void;
   step?: number;
   className?: string;
 }
 
-/**
- * A dual-handle slider for selecting a price range with modern styling
- */
 const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
   label,
   minValue,
@@ -23,43 +25,60 @@ const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
   step = 10000,
   className = '',
 }) => {
-  const [localValue, setLocalValue] = useState(value);
+  const [range, setRange] = useState(value);
+  const [activeHandle, setActiveHandle] = useState<'min' | 'max' | null>(null);
 
-  // Update local state when props change
   useEffect(() => {
-    setLocalValue(value);
+    setRange(value);
   }, [value]);
 
-  // Debounce the change to avoid too many rerenders
   useEffect(() => {
+    if (range.min === value.min && range.max === value.max) return;
+    
     const timer = setTimeout(() => {
-      if (localValue.min !== value.min || localValue.max !== value.max) {
-        onChange(localValue);
-      }
+      onChange(range);
     }, 300);
-
+    
     return () => clearTimeout(timer);
-  }, [localValue, onChange, value]);
+  }, [range, value, onChange]);
 
-  const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newMin = parseInt(e.target.value, 10);
-    setLocalValue({
-      min: newMin,
-      max: Math.max(newMin, localValue.max),
-    });
+  useEffect(() => {
+    if (!activeHandle) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const slider = document.querySelector('.slider-container');
+      if (!slider) return;
+
+      const rect = slider.getBoundingClientRect();
+      const percentage = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+      const newValue = Math.round((percentage * (maxValue - minValue) + minValue) / step) * step;
+
+      setRange(prev => {
+        if (activeHandle === 'min') {
+          return { ...prev, min: Math.min(newValue, prev.max - step) };
+        }
+        return { ...prev, max: Math.max(newValue, prev.min + step) };
+      });
+    };
+
+    const handleMouseUp = () => setActiveHandle(null);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [activeHandle, minValue, maxValue, step]);
+
+  const handleMouseDown = (handle: 'min' | 'max') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActiveHandle(handle);
   };
 
-  const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newMax = parseInt(e.target.value, 10);
-    setLocalValue({
-      min: Math.min(localValue.min, newMax),
-      max: newMax,
-    });
-  };
-
-  // Calculate percentage for custom range track
-  const minPercentage = ((localValue.min - minValue) / (maxValue - minValue)) * 100;
-  const maxPercentage = ((localValue.max - minValue) / (maxValue - minValue)) * 100;
+  const minPercentage = ((range.min - minValue) / (maxValue - minValue)) * 100;
+  const maxPercentage = ((range.max - minValue) / (maxValue - minValue)) * 100;
 
   return (
     <div className={`w-full ${className}`}>
@@ -69,44 +88,35 @@ const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
         </label>
       )}
       
-      <div className="flex flex-col">
-        <div className="relative h-2 mb-6 mt-4">
-          <div className="absolute h-2 w-full rounded-full bg-[var(--color-light)]"></div>
-          <div 
-            className="absolute h-2 rounded-full bg-[var(--color-accent)]"
-            style={{ 
-              left: `${minPercentage}%`, 
-              width: `${maxPercentage - minPercentage}%` 
-            }}
-          ></div>
-          <input
-            type="range"
-            className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer z-10"
-            min={minValue}
-            max={maxValue}
-            step={step}
-            value={localValue.min}
-            onChange={handleMinChange}
-            style={{ pointerEvents: 'auto' }}
+      <div className="flex flex-col space-y-5">
+        <div className="relative h-8 slider-container">
+          <div className="absolute top-3 w-full h-2">
+            <div className="absolute w-full h-full rounded-full bg-[var(--color-light)]" />
+            
+            <div
+              className="absolute h-full rounded-full bg-[var(--color-accent)]"
+              style={{
+                left: `${minPercentage}%`,
+                width: `${maxPercentage - minPercentage}%`,
+              }}
+            />
+          </div>
+
+          <div
+            className="absolute top-1.5 w-6 h-6 -ml-3 rounded-full bg-white border-2 border-[var(--color-accent)] cursor-pointer hover:shadow-lg transition-shadow"
+            style={{ left: `${minPercentage}%` }}
+            onMouseDown={handleMouseDown('min')}
           />
-          <input
-            type="range"
-            className="absolute w-full h-2 appearance-none bg-transparent cursor-pointer z-20"
-            min={minValue}
-            max={maxValue}
-            step={step}
-            value={localValue.max}
-            onChange={handleMaxChange}
-            style={{ pointerEvents: 'auto' }}
+          <div
+            className="absolute top-1.5 w-6 h-6 -ml-3 rounded-full bg-white border-2 border-[var(--color-accent)] cursor-pointer hover:shadow-lg transition-shadow"
+            style={{ left: `${maxPercentage}%` }}
+            onMouseDown={handleMouseDown('max')}
           />
         </div>
+
         <div className="flex justify-between items-center text-sm text-[var(--color-primary)]">
-          <div className="font-medium">
-            {formatPrice(localValue.min)}
-          </div>
-          <div className="font-medium">
-            {formatPrice(localValue.max)}
-          </div>
+          <div className="font-medium">{formatPrice(range.min)}</div>
+          <div className="font-medium">{formatPrice(range.max)}</div>
         </div>
       </div>
     </div>
